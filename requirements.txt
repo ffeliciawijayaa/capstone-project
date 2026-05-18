@@ -5,3 +5,6 @@ python-multipart
 Pillow
 numpy
 pyspellchecker
+mediapipe
+opencv-python
+numpy
