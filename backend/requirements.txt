@@ -1,0 +1,10 @@
+tensorflow
+fastapi
+uvicorn
+python-multipart
+Pillow
+numpy
+pyspellchecker
+mediapipe
+opencv-python
+numpy
