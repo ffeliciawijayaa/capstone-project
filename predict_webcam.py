@@ -1,141 +1,125 @@
-import os
-os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
-os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
-
 import cv2
-import numpy as np
-import tensorflow as tf
-from tensorflow import keras
 import mediapipe as mp
-import sys
-from collections import deque
+import numpy as np
+import threading
+import pyttsx3
+from tensorflow.keras.models import load_model
 
-MODEL_PATH = 'asl_model_best.keras'
-PADDING_RATIO = 1.5   
+# Fungsi untuk mengeluarkan suara tanpa membuat kamera freeze
+def speak_text(text):
+    if text.strip() == "": 
+        return
+    def speak_thread():
+        # Inisialisasi engine di dalam thread agar aman di Windows
+        try:
+            import pythoncom
+            pythoncom.CoInitialize()
+        except ImportError:
+            pass
+            
+        engine = pyttsx3.init()
+        # Mengatur kecepatan bicara (opsional, default biasanya 200)
+        engine.setProperty('rate', 150) 
+        engine.say(text)
+        engine.runAndWait()
+        
+    threading.Thread(target=speak_thread, daemon=True).start()
 
-#custom layer
-class AslNormalization(keras.layers.Layer):
-    def call(self, inputs):
-        return tf.cast(inputs, tf.float32) / 255.0
+print("Memuat model...")
+model = load_model('sign_language_model.h5')
+classes = np.load('classes.npy', allow_pickle=True)
 
-
-#camera
-print("Start webcam")
-cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-ret, frame = cap.read()
-
-if not ret:
-    cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
-    ret, frame = cap.read()
-
-if not cap.isOpened():
-    print("Kamera error")
-    sys.exit()
-
-print("Webcam ok")
-
-#load model
-print("Load model")
-model = keras.models.load_model(
-    MODEL_PATH,
-    custom_objects={'AslNormalization': AslNormalization}
-)
-print("Model loaded")
-
-#media pipe
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
+hands = mp_hands.Hands(static_image_mode=False, max_num_hands=1, min_detection_confidence=0.7)
 
-hands = mp_hands.Hands(
-    static_image_mode=False,
-    max_num_hands=1,
-    min_detection_confidence=0.6,
-    min_tracking_confidence=0.6
-)
+cap = cv2.VideoCapture(0)
 
-labels = [chr(i) for i in range(65, 91)] + ['del', 'nothing', 'space']
+# Variabel untuk logika perangkai kata
+current_word = ""
+sentence = ""
+last_predicted_char = ""
+frames_held = 0
+FRAMES_TO_CONFIRM = 15 # Tahan gerakan selama 15 frame (sekitar 0.5 detik) untuk mengetik huruf
 
-#stability buffer
-pred_buffer = deque(maxlen=7)
+print("Kamera siap! Tekan 'q' untuk keluar.")
 
-print("\nSignBridge start... (tekan Q untuk keluar)\n")
-
-#loop
 while cap.isOpened():
     ret, frame = cap.read()
-    if not ret:
-        break
+    if not ret: break
 
     frame = cv2.flip(frame, 1)
-    h, w, _ = frame.shape
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    results = hands.process(frame_rgb)
 
-    frame_clean = frame.copy()
-
-    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    results = hands.process(rgb)
-
-    pred_label = "No hand detected"
+    predicted_char = ""
+    confidence = 0
 
     if results.multi_hand_landmarks:
         for hand_landmarks in results.multi_hand_landmarks:
-
             mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+            
+            landmark_list = []
+            for landmark in hand_landmarks.landmark:
+                landmark_list.extend([landmark.x, landmark.y, landmark.z])
+            
+            input_data = np.array([landmark_list])
+            prediction = model.predict(input_data, verbose=0)
+            
+            class_idx = np.argmax(prediction)
+            confidence = np.max(prediction)
+            
+            if confidence > 0.7:
+                predicted_char = classes[class_idx]
 
+    # --- LOGIKA PENGETIKAN & SUARA ---
+    if predicted_char != "":
+        if predicted_char == last_predicted_char:
+            frames_held += 1
+        else:
+            frames_held = 0
+            last_predicted_char = predicted_char
 
-            #landmark list
-            x_list = [lm.x for lm in hand_landmarks.landmark]
-            y_list = [lm.y for lm in hand_landmarks.landmark]
+        # Jika karakter ditahan cukup lama, proses karakternya
+        if frames_held == FRAMES_TO_CONFIRM:
+            if predicted_char == 'space':
+                # Jika spasi, baca kata yang sudah dirangkai, lalu masukkan ke kalimat
+                speak_text(current_word)
+                sentence += current_word + " "
+                current_word = ""
+            elif predicted_char == 'del':
+                # Hapus satu huruf terakhir
+                current_word = current_word[:-1]
+            elif predicted_char == 'nothing':
+                pass # Abaikan
+            else:
+                # Tambahkan huruf ke kata
+                current_word += predicted_char
+    else:
+        frames_held = 0
 
- 
-            cx = int(np.mean(x_list) * w)
-            cy = int(np.mean(y_list) * h)
+    # --- TAMPILAN VISUAL DI LAYAR ---
+    # Tampilkan prediksi saat ini di pojok kiri atas
+    cv2.putText(frame, f'Prediksi: {predicted_char} ({confidence*100:.0f}%)', 
+                (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+    
+    # Tampilkan indikator "loading" saat menahan huruf
+    if frames_held > 0 and frames_held < FRAMES_TO_CONFIRM:
+        loading_text = "." * (frames_held // 3)
+        cv2.putText(frame, loading_text, (250, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
 
-            width = (max(x_list) - min(x_list)) * w
-            height = (max(y_list) - min(y_list)) * h
+    # Tampilkan kata yang sedang diketik (warna kuning)
+    cv2.putText(frame, f'Kata: {current_word}', (10, 90), 
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+    
+    # Tampilkan kalimat utuh (warna biru)
+    cv2.putText(frame, f'Kalimat: {sentence}', (10, 140), 
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 200, 0), 2)
 
-            box_size = int(max(width, height) * PADDING_RATIO)
-
-            x1 = max(0, cx - box_size // 2)
-            x2 = min(w, cx + box_size // 2)
-            y1 = max(0, cy - box_size // 2)
-            y2 = min(h, cy + box_size // 2)
-
-            #draw box
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-
-
-            crop = frame_clean[y1:y2, x1:x2]
-
-            if crop.size > 0:
-
-                crop = cv2.resize(crop, (128, 128))
-
-                inp = np.expand_dims(crop, axis=0)
-
-                # =========================
-                # PREDICT
-                # =========================
-                pred = model.predict(inp, verbose=0)[0]
-
-                idx = np.argmax(pred)
-                conf = pred[idx]
-
-
-                #filter stability
-                pred_buffer.append(idx)
-                stable_idx = max(set(pred_buffer), key=pred_buffer.count)
-
-                pred_label = f"{labels[stable_idx]} ({conf*100:.1f}%)"
-
-
-    cv2.putText(frame, f"Deteksi: {pred_label}", (10, 50),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-
-    cv2.imshow("SignBridge", frame)
+    cv2.imshow('Sign Language Translator', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 cap.release()
 cv2.destroyAllWindows()
-print("selesai")

@@ -8,7 +8,6 @@ CUSTOM_WORDS = {
     "GD": "GOOD",
 }
 
-
 def correct_text(text):
 
     text = text.upper()

@@ -4,18 +4,18 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
-
 PATH_DATA = 'dataset/asl_alphabet_train'
 LOG_DIR = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+MODEL_SAVE_PATH = 'asl_model_best.keras'
 
-#load dataset
+# Load Dataset
 train_ds = tf.keras.utils.image_dataset_from_directory(
     PATH_DATA,
     validation_split=0.2,
     subset="training",
     seed=123,
     image_size=(128, 128),
-    batch_size=16, 
+    batch_size=32,
     label_mode='categorical'
 )
 
@@ -25,88 +25,108 @@ val_ds = tf.keras.utils.image_dataset_from_directory(
     subset="validation",
     seed=123,
     image_size=(128, 128),
-    batch_size=16,
+    batch_size=32,
     label_mode='categorical'
 )
 
-AUTOTUNE = tf.data.AUTOTUNE
-train_ds = train_ds.shuffle(1000).prefetch(buffer_size=AUTOTUNE)
-val_ds = val_ds.prefetch(buffer_size=AUTOTUNE)
+# Augmentasi Data
+augmentation = keras.Sequential([
+    layers.RandomFlip("horizontal"),
+    layers.RandomRotation(0.15),
+    layers.RandomZoom(0.1),
+    layers.RandomBrightness(0.2),
+    layers.RandomContrast(0.2),
+], name="augmentation")
 
-#arsitektur model (functional API + custom layer)
+AUTOTUNE = tf.data.AUTOTUNE
+train_ds = (train_ds
+            .map(lambda x, y: (augmentation(x, training=True), y),
+                 num_parallel_calls=AUTOTUNE)
+            .shuffle(1000)
+            .prefetch(AUTOTUNE))
+val_ds = val_ds.prefetch(AUTOTUNE)
+
+# Custom Layer 
 class AslNormalization(layers.Layer):
     def call(self, inputs):
         return tf.cast(inputs, tf.float32) / 255.0
 
+# Arsitektur Model
 def build_asl_model():
     inputs = keras.Input(shape=(128, 128, 3))
     x = AslNormalization()(inputs)
-    x = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(x)
-    x = layers.MaxPooling2D(pool_size=(2, 2))(x)
-    x = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(x)
-    x = layers.MaxPooling2D(pool_size=(2, 2))(x)
-    x = layers.Flatten()(x)
-    x = layers.Dense(128, activation='relu')(x)
+
+    # Blok 1
+    x = layers.Conv2D(32, (3,3), padding='same')(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation('relu')(x)
+    x = layers.MaxPooling2D()(x)
+
+    # Blok 2
+    x = layers.Conv2D(64, (3,3), padding='same')(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation('relu')(x)
+    x = layers.MaxPooling2D()(x)
+
+    # Blok 3
+    x = layers.Conv2D(128, (3,3), padding='same')(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation('relu')(x)
+    x = layers.MaxPooling2D()(x)
+
+    # Blok 4
+    x = layers.Conv2D(256, (3,3), padding='same')(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation('relu')(x)
+    x = layers.GlobalAveragePooling2D()  (x)
+
+    # Head
+    x = layers.Dense(256, activation='relu')(x)
+    x = layers.Dropout(0.5)(x)
     outputs = layers.Dense(29, activation='softmax')(x)
+
     return keras.Model(inputs=inputs, outputs=outputs)
 
 model = build_asl_model()
-optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
-loss_fn = tf.keras.losses.CategoricalCrossentropy()
+model.summary()
 
-#tensorboard & metrics (Side Quest)
-summary_writer = tf.summary.create_file_writer(LOG_DIR)
-train_acc_metric = tf.keras.metrics.CategoricalAccuracy()
-val_acc_metric = tf.keras.metrics.CategoricalAccuracy()
-train_mae_metric = tf.keras.metrics.MeanAbsoluteError()
+#Compile
+model.compile(
+    optimizer=keras.optimizers.Adam(learning_rate=1e-3),
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
 
-#custom training loop(tf.GradientTape) 
-@tf.function
-def train_step(x, y):
-    with tf.GradientTape() as tape:
-        logits = model(x, training=True)
-        loss_value = loss_fn(y, logits)
-    grads = tape.gradient(loss_value, model.trainable_weights)
-    optimizer.apply_gradients(zip(grads, model.trainable_weights))
-    
-    train_acc_metric.update_state(y, logits)
-    train_mae_metric.update_state(y, logits)
-    return loss_value
+# Callbacks 
+callbacks = [
+    keras.callbacks.ModelCheckpoint(
+        MODEL_SAVE_PATH,
+        monitor='val_accuracy',
+        save_best_only=True,
+        verbose=1
+    ),
+    keras.callbacks.EarlyStopping(
+        monitor='val_accuracy',
+        patience=5,
+        restore_best_weights=True,
+        verbose=1
+    ),
+    keras.callbacks.ReduceLROnPlateau(
+        monitor='val_loss',
+        factor=0.5,
+        patience=3,
+        min_lr=1e-6,
+        verbose=1
+    ),
+    keras.callbacks.TensorBoard(log_dir=LOG_DIR)
+]
 
-#training
-epochs = 10 
-best_acc = 0
+#Training 
+history = model.fit(
+    train_ds,
+    validation_data=val_ds,
+    epochs=30,
+    callbacks=callbacks
+)
 
-for epoch in range(epochs):
-    print(f"\nEpoch {epoch+1}/{epochs}")
-    for step, (x_batch, y_batch) in enumerate(train_ds):
-        loss = train_step(x_batch, y_batch)
-        
-        if step % 100 == 0:
-            print(f"Step {step} | Loss: {loss:.4f} | Acc: {train_acc_metric.result():.4f}")
-            with summary_writer.as_default():
-                tf.summary.scalar('loss', loss, step=step)
-                tf.summary.scalar('train_accuracy', train_acc_metric.result(), step=step)
-
-    #validation & evaluasi loop
-    for x_val, y_val in val_ds:
-        val_logits = model(x_val, training=False)
-        val_acc_metric.update_state(y_val, val_logits)
-    
-    v_acc = val_acc_metric.result()
-    print(f"Validation Acc: {v_acc:.4f} | Train MAE: {train_mae_metric.result():.4f}")
-    
-    #save model
-    if v_acc > best_acc:
-        best_acc = v_acc
-        model.save('asl_model_best.keras')
-        print("Model terbaik berhasil disimpan dalam format .keras!")
-    
-    #early stopping
-    if v_acc > 0.99: 
-        print("Target akurasi tercapai. Training dihentikan.")
-        break
-
-    train_acc_metric.reset_state()
-    val_acc_metric.reset_state()
-    train_mae_metric.reset_state()
+print(f"\nTraining selesai. Model terbaik disimpan di: {MODEL_SAVE_PATH}")
