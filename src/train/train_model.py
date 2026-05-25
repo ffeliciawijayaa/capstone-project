@@ -9,7 +9,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 
 print("Membaca data dari CSV...")
 # 1. Load Data
-df = pd.read_csv('hand_landmarks.csv')
+df = pd.read_csv('/data/hand_landmarks.csv')
 
 # Pisahkan fitur (koordinat x, y, z) dan target (label)
 X = df.drop('label', axis=1).values
@@ -21,7 +21,7 @@ y_encoded = encoder.fit_transform(y)
 num_classes = len(np.unique(y_encoded))
 
 # Simpan urutan kelas ke file agar bisa diload oleh predict_webcam.py nanti
-np.save('classes.npy', encoder.classes_)
+np.save('models/classes.npy', encoder.classes_)
 print(f"Total kelas yang akan dilatih: {num_classes} kelas")
 
 # 3. Split Data (80% Training, 20% Testing)
@@ -58,6 +58,6 @@ print("\nMengevaluasi model pada data test...")
 loss, accuracy = model.evaluate(X_test, y_test)
 print(f"Akurasi akhir pada data test: {accuracy * 100:.2f}%")
 
-model.save('sign_language_model.h5')
-print("\nModel berhasil disimpan sebagai 'sign_language_model.h5'")
-print("File 'classes.npy' juga berhasil disimpan.")
+model.save('models/sign_language_model.keras')
+print("\nModel berhasil disimpan sebagai 'models/sign_language_model.keras'")
+print("File 'models/classes.npy' juga berhasil disimpan.")

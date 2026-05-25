@@ -26,8 +26,8 @@ def speak_text(text):
     threading.Thread(target=speak_thread, daemon=True).start()
 
 print("Memuat model...")
-model = load_model('sign_language_model.h5')
-classes = np.load('classes.npy', allow_pickle=True)
+model = load_model('models/sign_language_model.keras')
+classes = np.load('models/classes.npy', allow_pickle=True)
 
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils

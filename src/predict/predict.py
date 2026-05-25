@@ -8,7 +8,7 @@ class AslNormalization(layers.Layer):
     def call(self, inputs):
         return tf.cast(inputs, tf.float32) / 255.0
 
-MODEL_PATH = 'asl_model_best.keras'
+MODEL_PATH = '/models/asl_model_best.keras'
 labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
           'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 
           'del', 'nothing', 'space']
