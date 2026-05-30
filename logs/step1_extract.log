@@ -1,0 +1,26 @@
+2026-05-29 13:19:42,700 [INFO] Kelas BISINDO (26): ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+2026-05-29 13:19:42,703 [INFO] 
+==================================================
+2026-05-29 13:19:42,703 [INFO] MEMULAI PROSES SPLIT: TRAIN
+2026-05-29 13:19:42,792 [INFO] Total gambar train: 10400
+2026-05-29 13:23:37,758 [INFO]   Total sampel berhasil (train) : 5443
+2026-05-29 13:23:37,758 [INFO]   Gambar dilewati (train)     : 4957
+2026-05-29 13:23:38,383 [INFO]   Shape setelah filter (train): (5443, 129)
+2026-05-29 13:23:38,385 [INFO] 
+==================================================
+2026-05-29 13:23:38,385 [INFO] MEMULAI PROSES SPLIT: VALID
+2026-05-29 13:23:38,406 [INFO] Total gambar valid: 1749
+2026-05-29 13:24:44,203 [INFO]   Total sampel berhasil (valid) : 1579
+2026-05-29 13:24:44,203 [INFO]   Gambar dilewati (valid)     : 170
+2026-05-29 13:24:44,256 [WARNING]   [INFO] Kelas dengan sampel minim (< 30) di valid: ['B', 'C']
+2026-05-29 13:24:44,389 [INFO]   Shape setelah filter (valid): (1579, 129)
+2026-05-29 13:24:44,389 [INFO] 
+==================================================
+2026-05-29 13:24:44,389 [INFO] MEMULAI PROSES SPLIT: TEST
+2026-05-29 13:24:44,406 [INFO] Total gambar test: 874
+2026-05-29 13:25:17,456 [INFO]   Total sampel berhasil (test) : 767
+2026-05-29 13:25:17,456 [INFO]   Gambar dilewati (test)     : 107
+2026-05-29 13:25:17,506 [WARNING]   [INFO] Kelas dengan sampel minim (< 30) di test: ['U', 'N', 'L', 'F', 'J', 'D', 'O', 'S', 'H', 'W', 'Y', 'Z', 'B', 'C']
+2026-05-29 13:25:17,573 [INFO]   Shape setelah filter (test): (767, 129)
+2026-05-29 13:25:17,591 [INFO] 
+  [OK] Seluruh proses ekstraksi selesai
