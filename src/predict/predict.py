@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import os
 import sys
-from tensorflow.keras import layers
+from tensorflow.keras import layers # type: ignore
 
 class AslNormalization(layers.Layer):
     def call(self, inputs):

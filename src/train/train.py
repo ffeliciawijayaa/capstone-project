@@ -1,15 +1,14 @@
 import os
 import datetime
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
+from tensorflow.keras import layers # type: ignore
 
 PATH_DATA = 'dataset/asl_alphabet_train'
 LOG_DIR = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 MODEL_SAVE_PATH = 'asl_model_best.keras'
 
 # Load Dataset
-train_ds = tf.keras.utils.image_dataset_from_directory(
+train_ds = tf.tf.keras.utils.image_dataset_from_directory(
     PATH_DATA,
     validation_split=0.2,
     subset="training",
@@ -19,7 +18,7 @@ train_ds = tf.keras.utils.image_dataset_from_directory(
     label_mode='categorical'
 )
 
-val_ds = tf.keras.utils.image_dataset_from_directory(
+val_ds = tf.tf.keras.utils.image_dataset_from_directory(
     PATH_DATA,
     validation_split=0.2,
     subset="validation",
@@ -30,7 +29,7 @@ val_ds = tf.keras.utils.image_dataset_from_directory(
 )
 
 # Augmentasi Data
-augmentation = keras.Sequential([
+augmentation = tf.keras.Sequential([
     layers.RandomFlip("horizontal"),
     layers.RandomRotation(0.15),
     layers.RandomZoom(0.1),
@@ -53,7 +52,7 @@ class AslNormalization(layers.Layer):
 
 # Arsitektur Model
 def build_asl_model():
-    inputs = keras.Input(shape=(128, 128, 3))
+    inputs = tf.keras.Input(shape=(128, 128, 3))
     x = AslNormalization()(inputs)
 
     # Blok 1
@@ -85,40 +84,40 @@ def build_asl_model():
     x = layers.Dropout(0.5)(x)
     outputs = layers.Dense(29, activation='softmax')(x)
 
-    return keras.Model(inputs=inputs, outputs=outputs)
+    return tf.keras.Model(inputs=inputs, outputs=outputs)
 
 model = build_asl_model()
 model.summary()
 
 #Compile
 model.compile(
-    optimizer=keras.optimizers.Adam(learning_rate=1e-3),
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
     loss='categorical_crossentropy',
     metrics=['accuracy']
 )
 
 # Callbacks 
 callbacks = [
-    keras.callbacks.ModelCheckpoint(
+    tf.keras.callbacks.ModelCheckpoint(
         MODEL_SAVE_PATH,
         monitor='val_accuracy',
         save_best_only=True,
         verbose=1
     ),
-    keras.callbacks.EarlyStopping(
+    tf.keras.callbacks.EarlyStopping(
         monitor='val_accuracy',
         patience=5,
         restore_best_weights=True,
         verbose=1
     ),
-    keras.callbacks.ReduceLROnPlateau(
+    tf.keras.callbacks.ReduceLROnPlateau(
         monitor='val_loss',
         factor=0.5,
         patience=3,
         min_lr=1e-6,
         verbose=1
     ),
-    keras.callbacks.TensorBoard(log_dir=LOG_DIR)
+    tf.keras.callbacks.TensorBoard(log_dir=LOG_DIR)
 ]
 
 #Training 
