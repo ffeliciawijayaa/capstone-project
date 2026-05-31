@@ -5,10 +5,10 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, BatchNormalization, Input
-from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.models import Sequential # type: ignore
+from tensorflow.keras.layers import Dense, Dropout, BatchNormalization, Input# type: ignore
+from tensorflow.keras.utils import to_categorical# type: ignore
+from tensorflow.keras.optimizers import Adam# type: ignore
 
 CSV_PATH = "data/bisindo_landmarks.csv"
 MODEL_PATH = "models/bisindo_model.keras"

@@ -6,7 +6,7 @@ import datetime
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical# type: ignore
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
