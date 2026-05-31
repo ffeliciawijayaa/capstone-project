@@ -4,7 +4,7 @@ import mediapipe as mp
 import tensorflow as tf
 from collections import deque
 
-model = tf.keras.models.load_model("C:\Users\FELICIA\Documents\GitHub\Local\capstone-project\models\bisindo_model.keras")
+model = tf.keras.models.load_model("models/paling_fix_bisindo_model.keras")
 classes = np.load("models/classes.npy", allow_pickle=True)
 
 mp_hands = mp.solutions.hands
@@ -77,7 +77,7 @@ while True:
                 1,
                 (0,255,0), 2)
 
-    cv2.imshow("BISINDO FINAL FIX", frame)
+    cv2.imshow("SignBridge Demo", frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break

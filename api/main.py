@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
 import tensorflow as tf
 from tensorflow.keras.models import load_model # type: ignore
 import numpy as np
@@ -7,7 +8,21 @@ import mediapipe as mp
 import os
 from src.data.correction import correct_text
 
+
+from api.bisindo import router as bisindo_router
+
 app = FastAPI()
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(bisindo_router)
 
 # Inisialisasi MediaPipe Hands
 mp_hands = mp.solutions.hands
@@ -40,24 +55,25 @@ current_text = ""
 
 @app.get("/")
 def home():
-    return {"status": "sip", "message": "API jalan"}
+    return {"status": "sip", "message": "API ASL dan BISINDO jalan"}
 
+# Endpoint ASL 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     global current_text
 
-    # 1. Baca gambar yang diunggah menggunakan OpenCV
+    #Baca gambar yang diunggah menggunakan OpenCV
     contents = await file.read()
     nparr = np.frombuffer(contents, np.uint8)
     image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     
-    # MediaPipe membutuhkan format RGB
+    #MediaPipe membutuhkan format RGB
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-    # 2. Ekstrak Landmark Tangan menggunakan MediaPipe
+    #Ekstrak Landmark Tangan menggunakan MediaPipe
     results = hands.process(image_rgb)
 
-    # Validasi: Jika tidak ada tangan terdeteksi di gambar
+    # Validasi jika tidak ada tangan terdeteksi di gambar
     if not results.multi_hand_landmarks:
         return {
             "prediction": "nothing",
@@ -67,17 +83,17 @@ async def predict(file: UploadFile = File(...)):
             "message": "Tidak ada tangan yang terdeteksi"
         }
 
-    # 3. Kumpulkan 63 nilai koordinat (X, Y, Z dari 21 titik)
+    #Kumpulkan 63 (X, Y, Z dari 21 titik)
     landmarks = []
     for hand_landmarks in results.multi_hand_landmarks:
         for lm in hand_landmarks.landmark:
             landmarks.extend([lm.x, lm.y, lm.z])
             
-    # Format ke dalam numpy array shape (1, 63)
+    #Format ke dalam numpy array shape (1, 63)
     img_array = np.array([landmarks], dtype=np.float32)
 
-    # 4. Prediksi dengan Model
-    predictions = model.predict(img_array)
+    #Prediksi dengan Model ASL
+    predictions = model.predict(img_array, verbose=0)
     target_index = np.argmax(predictions)
     confidence = float(np.max(predictions))
     

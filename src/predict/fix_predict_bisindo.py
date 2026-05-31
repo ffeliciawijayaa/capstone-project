@@ -1,3 +1,5 @@
+import os
+
 import cv2
 import numpy as np
 import mediapipe as mp
@@ -13,8 +15,9 @@ class LandmarkNormalizationLayer(tf.keras.layers.Layer):
 
 
 #load model
-MODEL_PATH = r"C:\Users\FELICIA\Documents\GitHub\Local\capstone-project\models\bisindo_model.keras"
-CLASSES_PATH = r"C:\Users\FELICIA\Documents\GitHub\Local\capstone-project\models\classes.npy"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_PATH = os.path.join(BASE_DIR, "models", "paling_fix_bisindo_model.keras")
+CLASSES_PATH = os.path.join(BASE_DIR, "models", "classes.npy")
 
 print("Loading model...")
 

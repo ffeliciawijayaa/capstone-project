@@ -9,9 +9,11 @@ from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.utils import to_categorical
 
 
-CSV_PATH = "C:\\Users\\FELICIA\\Documents\\GitHub\\Local\\capstone-project\\data\\bisindo_landmarks.csv"
-MODEL_PATH = "C:\\Users\\FELICIA\\Documents\\GitHub\\Local\\capstone-project\\models\\fix_bisindo_model.keras"
-CLASSES_PATH = "C:\\Users\\FELICIA\\Documents\\GitHub\\Local\\capstone-project\\models\\fix_classes.npy"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+CSV_PATH = os.path.join(BASE_DIR, "data", "bisindo_landmarks.csv")
+MODEL_PATH = os.path.join(BASE_DIR, "models", "paling_fix_bisindo_model.keras")
+CLASSES_PATH = os.path.join(BASE_DIR, "models", "classes.npy")
 
 os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
 os.makedirs("logs/fit", exist_ok=True)
