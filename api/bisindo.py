@@ -15,8 +15,10 @@ class LandmarkNormalizationLayer(tf.keras.layers.Layer):
         return tf.cast(inputs, tf.float32)
 
 #load model
-MODEL_PATH = r"C:\Users\FELICIA\Documents\GitHub\Local\capstone-project\src\train\models\fix_bisindo_functional.keras"
-CLASSES_PATH = r"C:\Users\FELICIA\Documents\GitHub\Local\capstone-project\models\classes.npy"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_PATH = os.path.join(BASE_DIR, "models", "paling_fix_bisindo_model.keras")
+CLASSES_PATH = os.path.join(BASE_DIR, "models", "classes.npy")
+
 
 print("Loading BISINDO model for API...")
 with tf.keras.utils.custom_object_scope({"LandmarkNormalizationLayer": LandmarkNormalizationLayer}):
