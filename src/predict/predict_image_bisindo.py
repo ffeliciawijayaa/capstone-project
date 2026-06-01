@@ -22,7 +22,7 @@ class LandmarkNormalizationLayer(tf.keras.layers.Layer):
 
 #path model & class
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL_PATH = os.path.join(BASE_DIR, "models", "paling_fix_bisindo_model.keras")
+MODEL_PATH = os.path.join(BASE_DIR, "models", "bisindo_model.keras")
 CLASSES_PATH = os.path.join(BASE_DIR, "models", "classes.npy")
 
 #load model

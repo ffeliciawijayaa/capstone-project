@@ -24,7 +24,7 @@ def speak_text(text):
     threading.Thread(target=speak_thread, daemon=True).start()
 
 print("Memuat model...")
-model = tensorflow.keras.models.load_model('models/asl_model.best.keras')
+model = tensorflow.keras.models.load_model('models/asl_model.keras')
 classes = np.load('models/classes.npy', allow_pickle=True)
 
 mp_hands = mp.solutions.hands
