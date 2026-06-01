@@ -37,7 +37,7 @@ class AslNormalization(tf.keras.layers.Layer):
         return tf.cast(inputs, tf.float32) / 255.0
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-model_path = os.path.join(BASE_DIR, "models", "asl_model_best.keras")
+model_path = os.path.join(BASE_DIR, "models", "asl_model.keras")
 
 model = load_model(
     model_path,
