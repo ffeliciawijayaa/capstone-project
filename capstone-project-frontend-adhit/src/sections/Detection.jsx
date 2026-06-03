@@ -5,7 +5,7 @@ function Detection() {
   const [file, setFile] = useState(null);
   const [result, setResult] = useState("Waiting for detection...");
   const [loading, setLoading] = useState(false);
-  const [aiStatus, setAiStatus] = useState("ready");
+  const [aiStatus, setAiStatus] = useState("error"); // "ready" | "detecting" | "error"
 
   // Webcam & WebSocket References
   const videoRef = useRef(null);
@@ -20,26 +20,35 @@ function Detection() {
     if (!result || typeof result !== "string") return fallback;
     const lines = result.split("\n");
     const targetLine = lines.find((line) => line.includes(keyword));
-    return targetLine ? targetLine.replace(`${keyword}: `, "") : fallback;
+    return targetLine ? targetLine.replace(`${keyword}: `, "").trim() : fallback;
   };
 
   const prediction = getResultValue("Prediction");
   const detectedText = getResultValue("Text");
   const confidence = getResultValue("Confidence");
 
-  // Fungsi pembantu mematikan kamera & pipa WebSocket
-  const stopCameraAndWS = () => {
-    if (streamData) {
-      streamData.getTracks().forEach((track) => track.stop());
-    }
-    if (wsRef.current) {
+  // Fungsi mematikan kamera & menutup Jalur WebSocket dengan bersih
+ const stopCameraAndWS = () => {
+  if (streamData) {
+    streamData.getTracks().forEach((track) => track.stop());
+  }
+
+  if (wsRef.current) {
+    if (
+      wsRef.current.readyState === WebSocket.OPEN ||
+      wsRef.current.readyState === WebSocket.CONNECTING
+    ) {
       wsRef.current.close();
-      wsRef.current = null;
     }
-    setCameraOn(false);
-    setStreamData(null);
-    setAiStatus("ready");
-  };
+
+    wsRef.current = null;
+  }
+
+  setCameraOn(false);
+  setStreamData(null);
+  setAiStatus("error");
+};
+
 
   // Pilih file gambar manual lewat folder internal
   const handleImage = (e) => {
@@ -51,7 +60,7 @@ function Detection() {
     }
   };
 
-  // Menyalakan/Mematikan Realtime Webcam + Jalur WebSocket
+  // Menyalakan / Mematikan Realtime Webcam + Koneksi WS On-Demand
   const toggleCamera = async () => {
     if (cameraOn) {
       stopCameraAndWS();
@@ -59,6 +68,7 @@ function Detection() {
     }
 
     try {
+      // 1. Ambil akses kamera terlebih dahulu
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
       });
@@ -69,86 +79,128 @@ function Detection() {
 
       setTimeout(() => {
         if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+        videoRef.current.srcObject = stream;
+
+        videoRef.current.onloadedmetadata = () => {
           videoRef.current.play();
-        }
-      }, 100);
+      };
+    }
+    }, 100);
 
-      // Inisialisasi koneksi WebSocket
-      wsRef.current = new WebSocket("ws://127.0.0.1:8000/bisindo/predict_webcam");
+      // 2. Buka WebSocket HANYA ketika kamera berhasil dinyalakan
+      console.log("MENGHUBUNGKAN KE WEBSOCKET BACKEND...");
+      const ws = new WebSocket("ws://127.0.0.1:8000/bisindo/predict_webcam");
+      wsRef.current = ws;
 
-       wsRef.current.onopen = () => {
-      console.log("WebSocket Terhubung!");
-      console.log(wsRef.current.readyState);
-      setAiStatus("ready");
-    };
-
-      wsRef.current.onmessage = (event) => {
-        const data = JSON.parse(event.data);
+         ws.onopen = () => {
+        console.log("WS OPEN");
         setAiStatus("ready");
-        setResult(
-          `Prediction: ${data.prediction}\nText: -\nConfidence: ${data.confidence}`
-        );
       };
 
-      wsRef.current.onerror = () => {
-        setResult("WebSocket Connection Error");
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setAiStatus("ready");
+          setResult(
+            `Prediction: ${data.prediction || "-"}\nText: -\nConfidence: ${data.confidence || "-"}`
+          );
+        } catch (err) {
+          console.error("Gagal membaca data dari server:", err);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error("WEBSOCKET MENGALAMI ERROR:", error);
         setAiStatus("error");
       };
 
-      wsRef.current.onclose = () => {
-        console.log("WebSocket Terputus.");
+      ws.onclose = (event) => {
+        console.log("WEBSOCKET DITUTUP:", event.code);
+        setAiStatus("error");
       };
 
-    } catch {
-      // DIPERBAIKI: Mengosongkan parameter catch yang tidak digunakan untuk mematuhi ESLint
+    } catch (err) {
+      console.error("Gagal membuka kamera:", err);
       setResult("Cannot access camera");
       setAiStatus("error");
     }
   };
 
-  // LOOPING OTOMATIS: Pengiriman gambar frame demi frame lewat WebSocket
+  // LOOPING OTOMATIS: Pengiriman data binary frame kamera ke backend via WebSocket
   useEffect(() => {
-    let streamingInterval;
+  let streamingInterval;
 
-    if (cameraOn && streamData) {
-      streamingInterval = setInterval(() => {
-        if (videoRef.current && canvasRef.current && wsRef.current?.readyState === WebSocket.OPEN) {
-          const video = videoRef.current;
-          const canvas = canvasRef.current;
-          const context = canvas.getContext("2d");
+  if (cameraOn && streamData) {
+    streamingInterval = setInterval(() => {
+      if (
+        videoRef.current &&
+        canvasRef.current &&
+        wsRef.current &&
+        wsRef.current.readyState === WebSocket.OPEN
+      ) {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        const context = canvas.getContext("2d");
 
-          if (video.videoWidth > 0 && video.videoHeight > 0) {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            const base64Frame = canvas.toDataURL("image/jpeg", 0.6);
-
-            console.log("MENGIRIM FRAME");
-
-            wsRef.current.send(base64Frame);
-
-            setAiStatus("detecting");
-          }
+        if (
+          !context ||
+          video.videoWidth <= 0 ||
+          video.videoHeight <= 0
+        ) {
+          return;
         }
-      }, 150);
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        context.drawImage(
+          video,
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+
+        canvas.toBlob(async (blob) => {
+          if (
+            blob &&
+            wsRef.current &&
+            wsRef.current.readyState === WebSocket.OPEN
+          ) {
+            const arrayBuffer = await blob.arrayBuffer();
+
+            if (
+              wsRef.current &&
+              wsRef.current.readyState === WebSocket.OPEN
+            ) {
+              wsRef.current.send(arrayBuffer);
+            }
+          }
+        }, "image/jpeg", 0.4);
+      }
+    }, 250);
+  }
+
+  return () => {
+    if (streamingInterval) {
+      clearInterval(streamingInterval);
+    }
+  };
+}, [cameraOn, streamData]);
+// Pembersihan otomatis saat component dihapus
+useEffect(() => {
+  return () => {
+    if (wsRef.current) {
+      wsRef.current.close();
     }
 
-    return () => {
-      if (streamingInterval) clearInterval(streamingInterval);
-    };
-  }, [cameraOn, streamData]);
+    if (streamData) {
+      streamData.getTracks().forEach((track) => track.stop());
+    }
+  };
+}, []);
 
-  // Antisipasi jika user menutup tab atau pindah halaman secara mendadak
-  useEffect(() => {
-    return () => {
-      if (streamData) streamData.getTracks().forEach((track) => track.stop());
-      if (wsRef.current) wsRef.current.close();
-    };
-  }, [streamData]);
-
-  // Tombol deteksi manual khusus file foto yang diunggah biasa
+  // Tombol deteksi manual khusus file foto statis
   const handleDetection = async () => {
     if (!file) {
       setResult("Please upload image first");
@@ -160,34 +212,35 @@ function Detection() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("http://127.0.0.1:8000/predict", {
+      const response = await fetch("http://127.0.0.1:8000/bisindo/predict_image", {
         method: "POST",
         body: formData,
       });
 
       const data = await response.json();
       setResult(
-        `Prediction: ${data.prediction}\nText: ${data.text || "-"}\nConfidence: ${data.confidence}`
+        `Prediction: ${data.prediction || "-"}\nText: -\nConfidence: ${data.confidence || "-"}`
       );
-    } catch {
-      // DIPERBAIKI: Mengosongkan parameter catch yang tidak digunakan untuk mematuhi ESLint
+    } catch (err) {
+      console.error(err);
       setResult("Failed to connect API");
-    }
-    setLoading(false);
+    } finally {
+      setLoading(false);
+      };
   };
 
   return (
     <section
       id="detection"
       style={{
-        padding: window.innerWidth < 768 ? "80px 20px" : "120px 80px",
+        padding: "80px 5%",
         background: "#F4FFFD",
       }}
     >
       <div style={{ textAlign: "center", marginBottom: "70px" }}>
         <h2
           style={{
-            fontSize: window.innerWidth < 768 ? "38px" : "52px",
+            fontSize: "42px",
             color: "#2B2B2B",
             marginBottom: "20px",
           }}
@@ -205,7 +258,7 @@ function Detection() {
           margin: "auto",
           background: "white",
           position: "relative",
-          padding: window.innerWidth < 768 ? "25px" : "50px",
+          padding: "5%",
           borderRadius: "30px",
           border: "1px solid #D7F2EB",
           boxShadow: "0 12px 30px rgba(0,0,0,0.05)",
@@ -255,6 +308,7 @@ function Detection() {
                   borderRadius: "10px",
                   fontSize: "14px",
                   fontWeight: "bold",
+                  zIndex: 10,
                 }}
               >
                 <div
@@ -263,10 +317,10 @@ function Detection() {
                     width: "10px",
                     height: "10px",
                     borderRadius: "50%",
-                    background: "#ff3b30",
+                    background: aiStatus === "ready" ? "#00A86B" : "#ff3b30",
                   }}
                 />
-                LIVE WEBSOCKET ACTIVE
+                {aiStatus === "ready" ? "LIVE WEBSOCKET ACTIVE" : "CONNECTING / ERROR"}
               </div>
               <canvas ref={canvasRef} style={{ display: "none" }} />
             </>
@@ -293,10 +347,11 @@ function Detection() {
             display: "flex",
             gap: "20px",
             marginBottom: "25px",
-            flexDirection: window.innerWidth < 768 ? "column" : "row",
           }}
         >
           <label
+            onMouseOver={(e) => (e.currentTarget.style.background = "#4FD6CA")}
+            onMouseOut={(e) => (e.currentTarget.style.background = "#2EC4B6")}
             style={{
               flex: 1,
               display: "flex",
@@ -310,8 +365,6 @@ function Detection() {
               fontWeight: "bold",
               transition: "all 0.35s ease",
             }}
-            onMouseOver={(e) => (e.target.style.background = "#4FD6CA")}
-            onMouseOut={(e) => (e.target.style.background = "#2EC4B6")}
           >
             Pilih Gambar
             <input
@@ -324,6 +377,12 @@ function Detection() {
 
           <button
             onClick={toggleCamera}
+            onMouseOver={(e) => {
+              e.target.style.background = cameraOn ? "#E53935" : "#4FD6CA";
+            }}
+            onMouseOut={(e) => {
+              e.target.style.background = cameraOn ? "#D93025" : "#2EC4B6";
+            }}
             style={{
               flex: 1,
               padding: "16px",
@@ -346,6 +405,12 @@ function Detection() {
           <button
             onClick={handleDetection}
             disabled={loading}
+            onMouseOver={(e) => {
+              if (!loading) e.target.style.background = "#4FD6CA";
+            }}
+            onMouseOut={(e) => {
+              if (!loading) e.target.style.background = "#2EC4B6";
+            }}
             style={{
               width: "100%",
               padding: "18px",
@@ -382,40 +447,26 @@ function Detection() {
             }}
           >
             <h3 style={{ color: "#2EC4B6", margin: 0 }}>Hasil Deteksi</h3>
-            {cameraOn && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "14px",
+                fontWeight: "600",
+                color: aiStatus === "ready" ? "#00A86B" : "#D93025",
+              }}
+            >
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  color:
-                    aiStatus === "ready"
-                      ? "#00A86B"
-                      : aiStatus === "detecting"
-                      ? "#E09F00"
-                      : "#D93025",
+                  width: "10px",
+                  height: "10px",
+                  borderRadius: "50%",
+                  background: aiStatus === "ready" ? "#00A86B" : "#D93025",
                 }}
-              >
-                <div
-                  style={{
-                    width: "10px",
-                    height: "10px",
-                    borderRadius: "50%",
-                    background:
-                      aiStatus === "ready"
-                        ? "#00A86B"
-                        : aiStatus === "detecting"
-                        ? "#E09F00"
-                        : "#D93025",
-                  }}
-                />
-                {aiStatus === "ready" && "Live Detection Active"}
-                {aiStatus === "detecting" && "Processing Frame..."}
-                {aiStatus === "error" && "Server Error"}
-              </div>
-            )}
+              />
+              {aiStatus === "ready" ? "Server Active" : "Server Error / Inactive"}
+            </div>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
