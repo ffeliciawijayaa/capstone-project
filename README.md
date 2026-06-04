@@ -4,10 +4,6 @@
 
 ### Realtime Sign Language Recognition System
 
-**Bridging the gap between sign language and text — in real time.**
-
-[Demo](#demo) · [Fitur](#-fitur) · [Instalasi](#-instalasi) · [Struktur Proyek](#-struktur-proyek)
-
 </div>
 
 ---
