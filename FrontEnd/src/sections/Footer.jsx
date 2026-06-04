@@ -24,7 +24,7 @@ function Footer() {
               marginBottom: "20px",
             }}
           >
-            SignAI
+            SignBridge
           </h2>
 
           <p
@@ -65,7 +65,7 @@ function Footer() {
           </h3>
 
           <p style={{ color: "#CBD5E1" }}>
-            Email: signai@example.com
+            Email: SignBridge@example.com
           </p>
 
           <p style={{ color: "#CBD5E1" }}>
@@ -83,7 +83,7 @@ function Footer() {
           color: "#94A3B8",
         }}
       >
-        © 2026 SignAI. All rights reserved.
+        © 2026 SignBridge. All rights reserved.
       </div>
     </footer>
   );

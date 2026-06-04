@@ -1,10 +1,10 @@
 import os
-import cv2
+import cv2# type: ignore
 import numpy as np
-import mediapipe as mp
-import tensorflow as tf
+import mediapipe as mp# type: ignore
+import tensorflow as tf# type: ignore
 from collections import deque
-from fastapi import APIRouter, UploadFile, File, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, UploadFile, File, WebSocket, WebSocketDisconnect# type: ignore
 
 router = APIRouter(prefix="/bisindo", tags=["BISINDO"])
 

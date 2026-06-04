@@ -1,10 +1,10 @@
-from fastapi import FastAPI, UploadFile, File
-from fastapi.middleware.cors import CORSMiddleware
-import tensorflow as tf
+from fastapi import FastAPI, UploadFile, File# type: ignore
+from fastapi.middleware.cors import CORSMiddleware# type: ignore
+import tensorflow as tf# type: ignore
 from tensorflow.keras.models import load_model # type: ignore
 import numpy as np
-import cv2
-import mediapipe as mp
+import cv2# type: ignore
+import mediapipe as mp# type: ignore
 import os
 from src.data.correction import correct_text
 

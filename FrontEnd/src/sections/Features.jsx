@@ -43,7 +43,7 @@ function Features() {
             marginBottom: "20px",
           }}
         >
-          Features
+          Fitur
         </h2>
 
         <p
@@ -52,8 +52,7 @@ function Features() {
             color: "#666",
           }}
         >
-          Smart features designed to improve communication
-          and sign language learning.
+          Fitur cerdas yang dirancang untuk meningkatkan komunikasi dan pembelajaran bahasa isyarat.
         </p>
       </div>
 
@@ -77,7 +76,7 @@ function Features() {
               fontSize: "24px",
             }}
           >
-            AI Detection
+            Deteksi AI
           </h3>
 
           <p
@@ -102,7 +101,7 @@ function Features() {
               fontSize: "24px",
             }}
           >
-            Easy Learning
+            Pembelajaran Mudah
           </h3>
 
           <p
@@ -127,7 +126,7 @@ function Features() {
               fontSize: "24px",
             }}
           >
-            Fast Communication
+            Komunikasi Cepat
           </h3>
 
           <p

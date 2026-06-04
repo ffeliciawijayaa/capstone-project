@@ -24,11 +24,12 @@ function HowItWorks() {
 
   return (
     <section
-      style={{
-        padding: "120px 80px",
-        background: "white",
-      }}
-    >
+  id="how-it-works"
+  style={{
+    padding: "120px 80px",
+    background: "white",
+  }}
+>
       <div
         style={{
           textAlign: "center",
@@ -42,7 +43,7 @@ function HowItWorks() {
             marginBottom: "20px",
           }}
         >
-          How It Works
+          Cara Kerja
         </h2>
 
         <p
@@ -51,7 +52,7 @@ function HowItWorks() {
             color: "#666",
           }}
         >
-          Simple steps to use AI sign language detection.
+          Langkah mudah menggunakan deteksi bahasa isyarat AI.
         </p>
       </div>
 
@@ -93,7 +94,7 @@ function HowItWorks() {
               color: "#2B2B2B",
             }}
           >
-            Upload Image
+            Unggah Gambar
           </h3>
 
           <p
@@ -136,7 +137,7 @@ function HowItWorks() {
               color: "#2B2B2B",
             }}
           >
-            AI Detection
+            Deteksi AI
           </h3>
 
           <p
@@ -179,7 +180,7 @@ function HowItWorks() {
               color: "#2B2B2B",
             }}
           >
-            Get Result
+            Lihat Hasil
           </h3>
 
           <p

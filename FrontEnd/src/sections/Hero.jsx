@@ -4,12 +4,13 @@ function Hero() {
       id="home"
       style={{
         minHeight: "100vh",
+        paddingTop: "120px",
         background: "linear-gradient(to bottom, #F4FFFD, #DDF8F3)",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
         textAlign: "center",
-        padding: "50px",
+        padding: "160px 50px 50px",
         position: "relative",
         overflow: "hidden",
       }}
@@ -31,7 +32,7 @@ function Hero() {
         style={{
           position: "relative",
           zIndex: 2,
-          maxWidth: "900px",
+          maxWidth: "1100px", // Ditambah sedikit biar teks 1 barisnya gak sesak
         }}
       >
         <div
@@ -47,27 +48,27 @@ function Hero() {
             fontSize: "15px",
           }}
         >
-          AI Powered Communication Platform
+          Platform Komunikasi Bahasa Isyarat Berbasis AI
         </div>
 
         <h1
           style={{
-            fontSize: "78px",
+            fontSize: window.innerWidth < 768 ? "28px" : "42px", // Diperkecil dikit ukurannya biar pas jadi 1 baris di layar
             color: "#2B2B2B",
             marginBottom: "30px",
-            lineHeight: "1.1",
+            lineHeight: "1.3",
             fontWeight: "bold",
           }}
         >
-          Learn & Detect
-          <br />
-          Sign Language
-          <span style={{ color: "#2EC4B6" }}> With AI</span>
+          SignBridge:{" "}
+          <span style={{ color: "#2EC4B6" }}>
+            Jembatan Komunikasi Penyandang Disabilitas
+          </span>
         </h1>
 
         <p
           style={{
-            fontSize: "21px",
+            fontSize: window.innerWidth < 768 ? "17px" : "21px",
             color: "#555",
             maxWidth: "760px",
             margin: "auto",
@@ -75,9 +76,10 @@ function Hero() {
             lineHeight: "1.9",
           }}
         >
-          A modern AI-powered platform that helps people
-          communicate and learn sign language more easily
-          through smart image detection technology.
+          Platform berbasis Artificial Intelligence yang membantu
+          masyarakat mempelajari dan mengenali bahasa isyarat
+          secara mudah, cepat, dan real-time melalui teknologi
+          deteksi visual.
         </p>
 
         <div
@@ -88,54 +90,6 @@ function Hero() {
             flexWrap: "wrap",
           }}
         >
-          <button
-            style={{
-              padding: "17px 40px",
-              border: "none",
-              borderRadius: "14px",
-              background: "#2EC4B6",
-              color: "white",
-              fontSize: "18px",
-              fontWeight: "bold",
-              cursor: "pointer",
-              boxShadow: "0 12px 30px rgba(46, 196, 182, 0.35)",
-              transition: "all 0.35s ease",
-            }}
-            onMouseOver={(e) => {
-              e.target.style.background = "#4FD6CA";
-              e.target.style.transform = "translateY(-4px)";
-            }}
-            onMouseOut={(e) => {
-              e.target.style.background = "#2EC4B6";
-              e.target.style.transform = "translateY(0)";
-            }}
-          >
-            Try AI Detection
-          </button>
-
-          <button
-            style={{
-              padding: "17px 40px",
-              borderRadius: "14px",
-              background: "white",
-              border: "1px solid #CDEFE8",
-              color: "#2B2B2B",
-              fontSize: "18px",
-              fontWeight: "bold",
-              cursor: "pointer",
-              transition: "all 0.35s ease",
-            }}
-            onMouseOver={(e) => {
-              e.target.style.transform = "translateY(-4px)";
-              e.target.style.background = "#F8FFFD";
-            }}
-            onMouseOut={(e) => {
-              e.target.style.transform = "translateY(0)";
-              e.target.style.background = "white";
-            }}
-          >
-            Learn More
-          </button>
         </div>
       </div>
     </section>
