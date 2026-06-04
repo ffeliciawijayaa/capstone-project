@@ -21,12 +21,12 @@ Proyek ini terdiri dari tiga komponen utama:
 
 ## ✨ Fitur
 
-- 🎥 **Real-time Sign Language Recognition** — Deteksi gesture bahasa isyarat secara langsung melalui kamera
-- 🤖 **AI Text Correction** — Koreksi teks otomatis berbasis AI untuk hasil yang lebih akurat
-- ⚡ **FastAPI Backend** — API backend yang ringan dan cepat
-- 🧩 **TensorFlow Model** — Model deep learning yang dilatih dengan dataset BISINDO
-- 📊 **Streamlit Dashboard** — Visualisasi data dan analisis model secara interaktif
-- 🔁 **Hot Module Replacement** — Pengembangan frontend yang cepat dengan Vite HMR
+- **Real-time Sign Language Recognition** — Deteksi gesture bahasa isyarat secara langsung melalui kamera
+- **AI Text Correction** — Koreksi teks otomatis berbasis AI untuk hasil yang lebih akurat
+- **FastAPI Backend** — API backend yang ringan dan cepat
+- **TensorFlow Model** — Model deep learning yang dilatih dengan dataset BISINDO
+- **Streamlit Dashboard** — Visualisasi data dan analisis model secara interaktif
+- **Hot Module Replacement** — Pengembangan frontend yang cepat dengan Vite HMR
 
 ---
 
@@ -221,15 +221,9 @@ Proyek ini dikembangkan oleh tim yang luar biasa:
 
 ---
 
-## 📄 Lisensi
-
-Proyek ini dilisensikan di bawah [MIT License](LICENSE).
-
----
-
 <div align="center">
 
-Dibuat dengan ❤️ oleh Tim SignBridge
+Dibuat oleh Tim SignBridge
 
 ⭐ Jangan lupa beri bintang jika proyek ini bermanfaat!
 
