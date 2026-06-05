@@ -1,0 +1,37 @@
+names:
+- A
+- B
+- C
+- D
+- E
+- F
+- G
+- H
+- I
+- J
+- K
+- L
+- M
+- N
+- O
+- P
+- Q
+- R
+- S
+- T
+- U
+- V
+- W
+- X
+- Y
+- z
+nc: 26
+roboflow:
+  license: CC BY 4.0
+  project: bisindo-dataset-smbne
+  url: https://universe.roboflow.com/shiva-aulia-nazwa/bisindo-dataset-smbne/dataset/1
+  version: 1
+  workspace: shiva-aulia-nazwa
+test: ../test/images
+train: ../train/images
+val: ../valid/images
